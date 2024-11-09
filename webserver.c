@@ -10,8 +10,15 @@
 #include <errno.h>
 
 #define DEFAULT_PORT 80
+#define BUFFER_SIZE 1024
 
 int main(int argc, char *argv[]){
+    char buffer[BUFFER_SIZE];
+    char resp[] = "HTTP/1.0 200 OK\r\n"
+                  "Server: webserver-c\r\n"
+                  "Content-type: text/html\r\n\r\n"
+                  "<html>hello, world</html>\r\n";
+
     //socket creation
     int sock_fd = socket(AF_INET,SOCK_STREAM,0);
     if (sock_fd == -1){
@@ -38,6 +45,34 @@ int main(int argc, char *argv[]){
     }
 
     printf("Server listening...\n\n");
+
+
+    while(1) {
+        // Accept incoming connections
+        int newsockfd = accept(sock_fd, (struct sockaddr *)&server_adder,
+                               (socklen_t *)&server_addrlen);
+        if (newsockfd < 0) {
+            perror("webserver (accept)");
+            continue;
+        }
+        printf("connection accepted\n");
+
+        // Read from the socket
+        int valread = read(newsockfd, buffer, BUFFER_SIZE);
+        if (valread < 0) {
+            perror("webserver (read)");
+            continue;
+        }
+
+        // Write to the socket
+        int valwrite = write(newsockfd, resp, strlen(resp));
+        if (valwrite < 0) {
+            perror("webserver (write)");
+            continue;
+        }
+
+        close(newsockfd);
+    }
 
     return 0;
 }
